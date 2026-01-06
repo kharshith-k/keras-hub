@@ -134,20 +134,19 @@ def export_tokenizer(tokenizer, path):
         )
     
     # Generate tokenizer.json for models that need it
-    # We need to use the Fast tokenizer to generate tokenizer.json
+    # GemmaTokenizerFast will generate it properly from tokenizer.model + tokenizer_config.json
     if tokenizer_type == "Gemma3Tokenizer":
         try:
             from transformers import GemmaTokenizerFast
-            # Load from the exported files using the Fast tokenizer
-            # Fast tokenizers automatically generate tokenizer.json
+            # Load with trust_remote_code to handle any special initialization
             hf_tokenizer = GemmaTokenizerFast.from_pretrained(path)
-            # Save it back to ensure tokenizer.json is created
+            # Save to generate tokenizer.json with full vocabulary
             hf_tokenizer.save_pretrained(path)
         except Exception as e:
             warnings.warn(
                 f"Failed to generate tokenizer.json: {e}. "
                 "Tokenizer may not handle special tokens correctly. "
-                "Ensure transformers[sentencepiece] is installed."
+                "Ensure 'transformers' is installed with sentencepiece support."
             )
 
 
