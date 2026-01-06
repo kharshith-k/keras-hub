@@ -134,13 +134,14 @@ def export_tokenizer(tokenizer, path):
         )
     
     # Generate tokenizer.json for models that need it
-    # GemmaTokenizerFast will generate it properly from tokenizer.model + tokenizer_config.json
     if tokenizer_type == "Gemma3Tokenizer":
         try:
             from transformers import GemmaTokenizerFast
-            # Load with trust_remote_code to handle any special initialization
+            
+            # GemmaTokenizerFast will read tokenizer_config.json and tokenizer.model
+            # The added_tokens_decoder in tokenizer_config.json defines the token IDs
+            # This should properly generate tokenizer.json with vision tokens
             hf_tokenizer = GemmaTokenizerFast.from_pretrained(path)
-            # Save to generate tokenizer.json with full vocabulary
             hf_tokenizer.save_pretrained(path)
         except Exception as e:
             warnings.warn(
