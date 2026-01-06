@@ -12,6 +12,9 @@ from keras_hub.src.utils.transformers.export.gemma import (
 from keras_hub.src.utils.transformers.export.gemma import get_gemma_weights_map
 from keras_hub.src.utils.transformers.export.gemma3 import get_gemma3_config
 from keras_hub.src.utils.transformers.export.gemma3 import (
+    get_gemma3_image_converter_config,
+)
+from keras_hub.src.utils.transformers.export.gemma3 import (
     get_gemma3_tokenizer_config,
 )
 from keras_hub.src.utils.transformers.export.gemma3 import (
@@ -128,6 +131,30 @@ def export_tokenizer(tokenizer, path):
         )
 
 
+def export_image_converter(backbone, path):
+    """Export image converter config for vision models.
+    
+    Args:
+        backbone: The Keras backbone model.
+        path: str. Path to save the exported config.
+    """
+    model_type = backbone.__class__.__name__
+    
+    # Handle image converter config based on model type
+    if model_type == "Gemma3Backbone":
+        preprocessor_config = get_gemma3_image_converter_config(backbone)
+        if preprocessor_config is not None:
+            os.makedirs(path, exist_ok=True)
+            preprocessor_config_path = os.path.join(path, "preprocessor_config.json")
+            with open(preprocessor_config_path, "w") as f:
+                json.dump(preprocessor_config, f, indent=2)
+    # Add future vision models here
+    # elif model_type == "PaliGemmaBackbone":
+    #     preprocessor_config = get_paligemma_image_converter_config(backbone)
+    #     ...
+
+
+
 def export_to_safetensors(keras_model, path):
     """Converts a Keras model to Hugging Face Transformers format.
 
@@ -142,6 +169,10 @@ def export_to_safetensors(keras_model, path):
     """
     backbone = keras_model.backbone
     export_backbone(backbone, path, include_lm_head=True)
+    
+    # Export image converter config for vision models
+    export_image_converter(backbone, path)
+    
     if (
         keras_model.preprocessor is not None
         and keras_model.preprocessor.tokenizer is None
