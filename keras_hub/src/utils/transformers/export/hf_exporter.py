@@ -132,6 +132,22 @@ def export_tokenizer(tokenizer, path):
             "is correct and that the vocabulary file is present "
             "in the original model."
         )
+    
+    # Generate tokenizer.json for models that need it
+    # For SentencePiece tokenizers, we load with transformers and save to generate tokenizer.json
+    if tokenizer_type == "Gemma3Tokenizer":
+        try:
+            from transformers import GemmaTokenizer
+            # Load from the exported files (tokenizer.model + tokenizer_config.json)
+            # This will generate tokenizer.json automatically
+            hf_tokenizer = GemmaTokenizer.from_pretrained(path)
+            # Save it back to ensure tokenizer.json is created
+            hf_tokenizer.save_pretrained(path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to generate tokenizer.json: {e}. "
+                "Tokenizer may not handle special tokens correctly."
+            )
 
 
 def export_image_converter(backbone, path):
