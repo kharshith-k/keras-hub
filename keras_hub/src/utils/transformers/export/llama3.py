@@ -1,16 +1,23 @@
 import keras.ops as ops
 
 
-def get_llama3_config(backbone):
+def get_llama3_config(backbone, tokenizer=None):
     """Convert Keras Llama3 backbone config to Hugging Face dictionary.
 
     Args:
         backbone: Llama3Backbone. The Keras Llama3 backbone instance.
+        tokenizer: Llama3Tokenizer. Optional tokenizer used to populate
+            ``bos_token_id`` and ``eos_token_id`` in the config.
 
     Returns:
         A dict containing the Hugging Face model configuration.
     """
     head_dim = backbone.hidden_dim // backbone.num_query_heads
+
+    # Llama 3.1/3.2 (scaled RoPE) support up to 131072 tokens; Llama 3.0
+    # uses an 8192-token context window.
+    rope_freq_adj = getattr(backbone, "rope_frequency_adjustment_factor", None)
+    max_position_embeddings = 131072 if rope_freq_adj is not None else 8192
 
     hf_config = {
         "architectures": ["LlamaForCausalLM"],
@@ -22,6 +29,7 @@ def get_llama3_config(backbone):
         "hidden_size": backbone.hidden_dim,
         "intermediate_size": backbone.intermediate_dim,
         "head_dim": head_dim,
+        "max_position_embeddings": max_position_embeddings,
         "rms_norm_eps": backbone.layer_norm_epsilon,
         "rope_theta": backbone.rope_max_wavelength,
         "hidden_act": "silu",
@@ -33,10 +41,15 @@ def get_llama3_config(backbone):
         "torch_dtype": backbone.dtype_policy.compute_dtype,
     }
 
+    # BOS/EOS token IDs — read from the tokenizer when provided so that the
+    # correct vocabulary indices are written to config.json.
+    if tokenizer is not None:
+        hf_config["bos_token_id"] = tokenizer.token_to_id(tokenizer.start_token)
+        hf_config["eos_token_id"] = tokenizer.token_to_id(tokenizer.end_token)
+
     # Llama 3.1+ uses scaled RoPE ("llama3" rope_type).
     # Use getattr with None defaults so that older Llama 3.0 backbones that
     # lack these attributes do not raise AttributeError.
-    rope_freq_adj = getattr(backbone, "rope_frequency_adjustment_factor", None)
     if rope_freq_adj is not None:
         hf_config["rope_scaling"] = {
             "rope_type": "llama3",

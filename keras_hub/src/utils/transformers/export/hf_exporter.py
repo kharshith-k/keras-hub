@@ -96,13 +96,15 @@ MODEL_TOKENIZER_CONFIGS = {
 }
 
 
-def export_backbone(backbone, path, include_lm_head=False):
+def export_backbone(backbone, path, include_lm_head=False, tokenizer=None):
     """Export the backbone model to HuggingFace format.
 
     Args:
         backbone: The Keras backbone model to convert.
         path: str. Path to save the exported model.
         include_lm_head: bool. If True, include lm_head weights if applicable.
+        tokenizer: Optional tokenizer instance. When provided, model-specific
+            config functions may use it to populate token ID fields.
     """
     backend = keras.config.backend()
     model_type = backbone.__class__.__name__
@@ -117,7 +119,11 @@ def export_backbone(backbone, path, include_lm_head=False):
 
     # Get config
     get_config_fn = MODEL_CONFIGS[model_type]
-    hf_config = get_config_fn(backbone)
+    # Llama3 config requires the tokenizer for bos/eos token IDs.
+    if model_type == "Llama3Backbone" and tokenizer is not None:
+        hf_config = get_config_fn(backbone, tokenizer)
+    else:
+        hf_config = get_config_fn(backbone)
 
     # Get weights
     get_weights_fn = MODEL_EXPORTERS[model_type]
@@ -306,7 +312,12 @@ def export_to_safetensors(keras_model, path):
           config and tokenizer will be saved.
     """
     backbone = keras_model.backbone
-    export_backbone(backbone, path, include_lm_head=True)
+    tokenizer = (
+        keras_model.preprocessor.tokenizer
+        if keras_model.preprocessor is not None
+        else None
+    )
+    export_backbone(backbone, path, include_lm_head=True, tokenizer=tokenizer)
     if (
         keras_model.preprocessor is not None
         and keras_model.preprocessor.tokenizer is None
