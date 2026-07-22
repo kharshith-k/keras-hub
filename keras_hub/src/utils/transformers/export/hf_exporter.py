@@ -21,6 +21,15 @@ from keras_hub.src.utils.transformers.export.gemma3 import (
     get_gemma3_weights_map,
 )
 
+# --- Gemma 4 Utils ---
+from keras_hub.src.utils.transformers.export.gemma4 import get_gemma4_config
+from keras_hub.src.utils.transformers.export.gemma4 import (
+    get_gemma4_tokenizer_config,
+)
+from keras_hub.src.utils.transformers.export.gemma4 import (
+    get_gemma4_weights_map,
+)
+
 # --- GPT2 Utils ---
 from keras_hub.src.utils.transformers.export.gpt2 import get_gpt2_config
 from keras_hub.src.utils.transformers.export.gpt2 import (
@@ -56,6 +65,7 @@ from keras_hub.src.utils.transformers.export.qwen3_5 import (
 MODEL_CONFIGS = {
     "GemmaBackbone": get_gemma_config,
     "Gemma3Backbone": get_gemma3_config,
+    "Gemma4Backbone": get_gemma4_config,
     "MistralBackbone": get_mistral_config,
     "QwenBackbone": get_qwen_config,
     "Qwen3_5Backbone": get_qwen3_5_config,
@@ -65,6 +75,7 @@ MODEL_CONFIGS = {
 MODEL_EXPORTERS = {
     "GemmaBackbone": get_gemma_weights_map,
     "Gemma3Backbone": get_gemma3_weights_map,
+    "Gemma4Backbone": get_gemma4_weights_map,
     "MistralBackbone": get_mistral_weights_map,
     "QwenBackbone": get_qwen_weights_map,
     "Qwen3_5Backbone": get_qwen3_5_weights_map,
@@ -74,6 +85,7 @@ MODEL_EXPORTERS = {
 MODEL_TOKENIZER_CONFIGS = {
     "GemmaTokenizer": get_gemma_tokenizer_config,
     "Gemma3Tokenizer": get_gemma3_tokenizer_config,
+    "Gemma4Tokenizer": get_gemma4_tokenizer_config,
     "MistralTokenizer": get_mistral_tokenizer_config,
     "QwenTokenizer": get_qwen_tokenizer_config,
     "Qwen3_5Tokenizer": get_qwen3_5_tokenizer_config,
@@ -235,10 +247,11 @@ def export_tokenizer(tokenizer, path):
 
     # Rename files to match Hugging Face expectations
 
-    # 1. SentencePiece Models (Gemma / Gemma 3 / Mistral)
+    # 1. SentencePiece Models (Gemma / Gemma 3 / Gemma 4 / Mistral)
     if tokenizer_type in [
         "GemmaTokenizer",
         "Gemma3Tokenizer",
+        "Gemma4Tokenizer",
         "MistralTokenizer",
     ]:
         vocab_spm_path = os.path.join(path, "vocabulary.spm")
